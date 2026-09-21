@@ -1,0 +1,31 @@
+import { network } from "hardhat";
+
+async function main() {
+  const { ethers } = await network.connect();
+  const [deployer] = await ethers.getSigners();
+
+  console.log("Deploying with account:", deployer.address);
+
+  // ۱. دیپلوی توکن A
+  const TokenA = await ethers.getContractFactory("ProToken");
+  const tokenA = await TokenA.deploy(1000000);
+  await tokenA.waitForDeployment();
+  console.log("TokenA deployed to:", tokenA.target);
+
+  // ۲. دیپلوی توکن B
+  const TokenB = await ethers.getContractFactory("ProToken");
+  const tokenB = await TokenB.deploy(1000000);
+  await tokenB.waitForDeployment();
+  console.log("TokenB deployed to:", tokenB.target);
+
+  // ۳. دیپلوی DEX با آدرس دو توکن
+  const DEX = await ethers.getContractFactory("SimpleDEX");
+  const dex = await DEX.deploy(tokenA.target, tokenB.target);
+  await dex.waitForDeployment();
+  console.log("SimpleDEX deployed to:", dex.target);
+}
+
+main().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});

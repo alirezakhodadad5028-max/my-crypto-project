@@ -1,0 +1,45 @@
+import { network } from "hardhat";
+
+async function main() {
+  const { ethers } = await network.connect();
+  const [signer] = await ethers.getSigners();
+
+  const DEX_ADDRESS = "0xCC1D11fE7771Ac776739Aa31780225843Cc09867";
+  const TOKEN_A_ADDRESS = "0x5b15DfB3371dAE8f3eB626e596e84252B11E6D5e";
+  const TOKEN_B_ADDRESS = "0x658eAf65122989BBb2d102eb882D6e69D3b0DfD1";
+
+  const dex = await ethers.getContractAt("SimpleDEX", DEX_ADDRESS);
+  const tokenA = await ethers.getContractAt("ProToken", TOKEN_A_ADDRESS);
+  const tokenB = await ethers.getContractAt("ProToken", TOKEN_B_ADDRESS);
+
+  // ۱. چک موجودی
+  const balanceA = await tokenA.balanceOf(signer.address);
+  const balanceB = await tokenB.balanceOf(signer.address);
+  console.log("Your TokenA balance:", balanceA.toString());
+  console.log("Your TokenB balance:", balanceB.toString());
+
+  // ۲. approve
+  const amountIn = ethers.parseEther("1"); // ۱ توکن
+  console.log("\nApproving TokenA...");
+  const approveTx = await tokenA.approve(DEX_ADDRESS, amountIn);
+  await approveTx.wait();
+  console.log("Approved!");
+
+  // ۳. swap
+  console.log("\nSwapping 1 TokenA for TokenB...");
+  const deadline = Math.floor(Date.now() / 1000) + 3600; // ۱ ساعت بعد
+  const swapTx = await dex.swap(TOKEN_A_ADDRESS, amountIn, 0, deadline);
+  await swapTx.wait();
+  console.log("Swap successful!");
+
+  // ۴. چک reserves
+  const [reserveA, reserveB] = await dex.getReserves();
+  console.log("\nNew reserves:");
+  console.log("reserveA:", reserveA.toString());
+  console.log("reserveB:", reserveB.toString());
+}
+
+main().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});
